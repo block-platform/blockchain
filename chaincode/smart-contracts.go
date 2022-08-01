@@ -20,14 +20,14 @@ type DeviceInfo struct {
 }
 
 var count = 1
-/*
+
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	assets := []DeviceInfo{
 		{ID: "device1", Owner: "Tomoko", IPFSHash: "jgf783y4uf", 
 		AuthorizedDevices: []string{"device2", "device3"}, 
 		AuthorizedUsers: []string{"sandhya.shekar@sjsu.edu", "dylan.zhang@sjsu.edu"}},
 		{ID: "device2", Owner: "Tomoko2", IPFSHash: "csd214h", 
-		AuthorizedDevices: []string{"device1", "device3"}, 
+		AuthorizedDevices: []string{"device2", "device3"}, 
 		AuthorizedUsers: []string{"sandhya.shekar@sjsu.edu", "dylan.zhang@sjsu.edu"}},
 	}
 
@@ -45,7 +45,7 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 
 	return nil
 }
-*/
+
 
 // CreateAsset issues a new asset to the world state with given details.
 func (s *SmartContract) CreateNewDevice(ctx contractapi.TransactionContextInterface, owner string) error {
@@ -156,11 +156,43 @@ func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface,
 }
 
 // check if requesting device has access to given device's data
-func fetchIPFSHashForDeviceFromDevice() {
-// TODO Dylan
+// assests dataset argument that can be changed to other dataset
+func fetchIPFSHashForDeviceFromDevice(requestDeviceID string, assets []DeviceInfo) string {
+	// TODO Dylan
+	var ipfsCode string
+	if len(assets) <= 0 {
+		fmt.Println("Not found any data...")
+	}
+	for _, v := range assets {
+		for _, v2 := range v.AuthorizedDevices {
+			if requestDeviceID == v2 {
+				fmt.Printf("Yes, the requestDeviceID: %v has access to given devices's data (IPFSHash): %v\n", requestDeviceID, v.IPFSHash)
+				ipfsCode = v.IPFSHash
+			} else {
+				fmt.Printf("No, the requestDeviceID: %v hasn't access to given devices's data\n", requestDeviceID)
+			}
+		}
+	}
+	return ipfsCode
 }
 
 // check if requesting user has access to given device's data
-func fetchIPFSHashForDeviceFromUser() {
-// TODO Dylan
+// assests dataset argument that can be changed to other dataset
+func fetchIPFSHashForDeviceFromUser(requestUserEmail string, assets []DeviceInfo) []string {
+	// TODO Dylan
+	var authUsers []string
+	if len(assets) <= 0 {
+		fmt.Println("Not found any data...")
+	}
+	for _, v := range assets {
+		for _, v2 := range v.AuthorizedUsers {
+			if requestUserEmail == v2 {
+				fmt.Printf("Yes, the requestUserEmail: %v has access to given devices's data (IPFSHash): %v\n", requestUserEmail, v.IPFSHash)
+				authUsers = append(authUsers, v.IPFSHash)
+			} else {
+				fmt.Printf("No, the requestUserEmail: %v hasn't access to given devices's data\n", requestUserEmail)
+			}
+		}
+	}
+	return authUsers
 }
