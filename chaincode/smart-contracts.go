@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 	"strconv"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
@@ -14,61 +15,44 @@ type SmartContract struct {
 type DeviceInfo struct {
 	ID             string `json:"ID"`
 	Owner          string `json:"Owner"`
+	Name string `json:"Name"`
+	Region string `json:"Region"`
 	IPFSHash string `json:"IPFSHash"`
 	AuthorizedDevices []string `json:"AuthorizedDevices"`
 	AuthorizedUsers []string `json:"AuthorizedUsers"`
+	UpdatedAt string `json:"UpdatedAt"`
 }
 
 var count = 1
 
-func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
-	assets := []DeviceInfo{
-		{ID: "device1", Owner: "Tomoko", IPFSHash: "jgf783y4uf", 
-		AuthorizedDevices: []string{"device2", "device3"}, 
-		AuthorizedUsers: []string{"sandhya.shekar@sjsu.edu", "dylan.zhang@sjsu.edu"}},
-		{ID: "device2", Owner: "Tomoko2", IPFSHash: "csd214h", 
-		AuthorizedDevices: []string{"device2", "device3"}, 
-		AuthorizedUsers: []string{"sandhya.shekar@sjsu.edu", "dylan.zhang@sjsu.edu"}},
-	}
-
-	for _, asset := range assets {
-		assetJSON, err := json.Marshal(asset)
-		if err != nil {
-			return err
-		}
-
-		err = ctx.GetStub().PutState(asset.ID, assetJSON)
-		if err != nil {
-			return fmt.Errorf("failed to put to world state. %v", err)
-		}
-	}
-
-	return nil
-}
-
-
 // CreateAsset issues a new asset to the world state with given details.
-func (s *SmartContract) CreateNewDevice(ctx contractapi.TransactionContextInterface, owner string) error {
-	id := "device" + strconv.Itoa(count)
+func (s *SmartContract) CreateNewDevice(ctx contractapi.TransactionContextInterface, owner string, name string, region string) (string, error) {
+	id := "dev" + strconv.Itoa(count)
 	exists, err := s.AssetExists(ctx, id)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if exists {
-		return fmt.Errorf("the asset %s already exists", id)
+		return "The device " + id + " already exists", nil
 	}
+	
+	dt := time.Now()
 	asset := DeviceInfo{
 		ID: id,
 		Owner: owner,
+		Name: name,
+		Region: region,
 		IPFSHash: "",
 		AuthorizedDevices: []string{"any"},
-		AuthorizedUsers: []string{"any"}}
+		AuthorizedUsers: []string{"any"},
+		UpdatedAt: dt.String()}
 	assetJSON, err := json.Marshal(asset)
 	if err != nil {
-		return err
+		return "", err
 	}
 	count++
-	return ctx.GetStub().PutState(id, assetJSON)
+	ctx.GetStub().PutState(id, assetJSON)
+	return id, nil
 }
 
 // GetAllAssets returns all assets found in world state
@@ -120,7 +104,7 @@ func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, i
 
 // UpdateAsset updates an existing asset in the world state with provided parameters.
 // TODO there is an issue invoking this method via peer CLI due to array parameters. Looking for workaround.
-func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, id string, owner string, 
+func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, id string, owner string, name string, region string,
 iPFSHash string, authorizedDevices []string, authorizedUsers []string) error {
 	exists, err := s.AssetExists(ctx, id)
 	if err != nil {
@@ -130,13 +114,17 @@ iPFSHash string, authorizedDevices []string, authorizedUsers []string) error {
 		return fmt.Errorf("the asset %s does not exist", id)
 	}
 
-	// overwriting original asset with new asset
+	dt := time.Now()
+   	// overwriting original asset with new asset
 	asset := DeviceInfo{
 		ID: id,
 		Owner: owner,
+		Name: name,
+		Region: region,
 		IPFSHash: iPFSHash,
 		AuthorizedDevices: authorizedDevices,
-		AuthorizedUsers: authorizedUsers}
+		AuthorizedUsers: authorizedUsers,
+		UpdatedAt: dt.String()}
 	assetJSON, err := json.Marshal(asset)
 	if err != nil {
 		return err
@@ -156,43 +144,25 @@ func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface,
 }
 
 // check if requesting device has access to given device's data
-// assests dataset argument that can be changed to other dataset
-func fetchIPFSHashForDeviceFromDevice(requestDeviceID string, assets []DeviceInfo) string {
-	// TODO Dylan
-	var ipfsCode string
-	if len(assets) <= 0 {
-		fmt.Println("Not found any data...")
-	}
-	for _, v := range assets {
-		for _, v2 := range v.AuthorizedDevices {
-			if requestDeviceID == v2 {
-				fmt.Printf("Yes, the requestDeviceID: %v has access to given devices's data (IPFSHash): %v\n", requestDeviceID, v.IPFSHash)
-				ipfsCode = v.IPFSHash
-			} else {
-				fmt.Printf("No, the requestDeviceID: %v hasn't access to given devices's data\n", requestDeviceID)
-			}
-		}
-	}
-	return ipfsCode
-}
+/*func fetchIPFSHashForDeviceFromDevice(ctx contractapi.TransactionContextInterface, requestingdeviceID, targetDeviceID ) {
+	// TODO
+}*/
 
 // check if requesting user has access to given device's data
-// assests dataset argument that can be changed to other dataset
-func fetchIPFSHashForDeviceFromUser(requestUserEmail string, assets []DeviceInfo) []string {
-	// TODO Dylan
-	var authUsers []string
-	if len(assets) <= 0 {
-		fmt.Println("Not found any data...")
+func (s *SmartContract) fetchIPFSHashForDeviceFromUser(ctx contractapi.TransactionContextInterface, requestinguserEmail string, targetDeviceID string) (string, error) {
+	exists, err := s.AssetExists(ctx, targetDeviceID)
+	if err != nil {
+		return "", err
 	}
-	for _, v := range assets {
-		for _, v2 := range v.AuthorizedUsers {
-			if requestUserEmail == v2 {
-				fmt.Printf("Yes, the requestUserEmail: %v has access to given devices's data (IPFSHash): %v\n", requestUserEmail, v.IPFSHash)
-				authUsers = append(authUsers, v.IPFSHash)
-			} else {
-				fmt.Printf("No, the requestUserEmail: %v hasn't access to given devices's data\n", requestUserEmail)
-			}
+	if !exists {
+		return "The device " + targetDeviceID + " does not exist", nil
+	}
+	
+	asset, err := s.ReadAsset(ctx, targetDeviceID)
+	for _, v2 := range asset.AuthorizedUsers {
+		if requestinguserEmail == v2 {
+			return asset.IPFSHash, nil
 		}
 	}
-	return authUsers
+	return "The user " + requestinguserEmail + " does not have access to device " + targetDeviceID, nil
 }

@@ -8,6 +8,7 @@ func main() {
     simpleContract := new(SmartContract)
 
     cc, err := contractapi.NewChaincode(simpleContract)
+
     if err != nil {
         panic(err.Error())
     }
