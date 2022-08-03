@@ -36,16 +36,17 @@ func (s *SmartContract) CreateNewDevice(ctx contractapi.TransactionContextInterf
 		return "The device " + id + " already exists", nil
 	}
 	
-	dt := time.Now()
+	timestamp, err := ctx.GetStub().GetTxTimestamp()
+	timeString := time.Unix(timestamp.Seconds, int64(timestamp.Nanos)).String()
 	asset := DeviceInfo{
 		ID: id,
 		Owner: owner,
 		Name: name,
 		Region: region,
 		IPFSHash: "",
-		AuthorizedDevices: []string{"any"},
-		AuthorizedUsers: []string{"any"},
-		UpdatedAt: dt.String()}
+		AuthorizedDevices: []string{},
+		AuthorizedUsers: []string{},
+		UpdatedAt: timeString}
 	assetJSON, err := json.Marshal(asset)
 	if err != nil {
 		return "", err
@@ -114,7 +115,8 @@ iPFSHash string, authorizedDevices []string, authorizedUsers []string) error {
 		return fmt.Errorf("the asset %s does not exist", id)
 	}
 
-	dt := time.Now()
+	timestamp, err := ctx.GetStub().GetTxTimestamp()
+	timeString := time.Unix(timestamp.Seconds, int64(timestamp.Nanos)).String()
    	// overwriting original asset with new asset
 	asset := DeviceInfo{
 		ID: id,
@@ -124,7 +126,7 @@ iPFSHash string, authorizedDevices []string, authorizedUsers []string) error {
 		IPFSHash: iPFSHash,
 		AuthorizedDevices: authorizedDevices,
 		AuthorizedUsers: authorizedUsers,
-		UpdatedAt: dt.String()}
+		UpdatedAt: timeString}
 	assetJSON, err := json.Marshal(asset)
 	if err != nil {
 		return err
@@ -149,7 +151,7 @@ func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface,
 }*/
 
 // check if requesting user has access to given device's data
-func (s *SmartContract) fetchIPFSHashForDeviceFromUser(ctx contractapi.TransactionContextInterface, requestinguserEmail string, targetDeviceID string) (string, error) {
+/*func (s *SmartContract) fetchIPFSHashForDeviceFromUser(ctx contractapi.TransactionContextInterface, requestinguserEmail string, targetDeviceID string) (string, error) {
 	exists, err := s.AssetExists(ctx, targetDeviceID)
 	if err != nil {
 		return "", err
@@ -165,4 +167,4 @@ func (s *SmartContract) fetchIPFSHashForDeviceFromUser(ctx contractapi.Transacti
 		}
 	}
 	return "The user " + requestinguserEmail + " does not have access to device " + targetDeviceID, nil
-}
+}*/
