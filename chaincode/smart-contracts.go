@@ -12,12 +12,23 @@ type SmartContract struct {
 	contractapi.Contract
 }
 
-type DeviceInfo struct {
+/*type DeviceInfo_old struct {
 	ID             string `json:"ID"`
 	Owner          string `json:"Owner"`
 	Name string `json:"Name"`
 	Region string `json:"Region"`
 	IPFSHash string `json:"IPFSHash"`
+	AuthorizedDevices []string `json:"AuthorizedDevices"`
+	AuthorizedUsers []string `json:"AuthorizedUsers"`
+	UpdatedAt string `json:"UpdatedAt"`
+}*/
+
+type DeviceInfo struct {
+	ID             string `json:"ID"`
+	Owner          string `json:"Owner"`
+	Name string `json:"Name"`
+	Region string `json:"Region"`
+	IPFSHashList []string `json:"IPFSHashList"`
 	AuthorizedDevices []string `json:"AuthorizedDevices"`
 	AuthorizedUsers []string `json:"AuthorizedUsers"`
 	UpdatedAt string `json:"UpdatedAt"`
@@ -43,7 +54,8 @@ func (s *SmartContract) CreateNewDevice(ctx contractapi.TransactionContextInterf
 		Owner: owner,
 		Name: name,
 		Region: region,
-		IPFSHash: "",
+		//IPFSHash: "",
+		IPFSHashList: []string{},
 		AuthorizedDevices: []string{},
 		AuthorizedUsers: []string{},
 		UpdatedAt: timeString}
@@ -73,7 +85,8 @@ func (s *SmartContract) CreateNewDeviceWithId(ctx contractapi.TransactionContext
 		Owner: owner,
 		Name: name,
 		Region: region,
-		IPFSHash: "",
+		//IPFSHash: "",
+		IPFSHashList: []string{},
 		AuthorizedDevices: []string{},
 		AuthorizedUsers: []string{},
 		UpdatedAt: timeString}
@@ -136,7 +149,7 @@ func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, i
 // UpdateAsset updates an existing asset in the world state with provided parameters.
 // TODO there is an issue invoking this method via peer CLI due to array parameters. Looking for workaround.
 func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, id string, owner string, name string, region string,
-iPFSHash string, authorizedDevices []string, authorizedUsers []string) error {
+iPFSHashList []string, authorizedDevices []string, authorizedUsers []string) error {
 	exists, err := s.AssetExists(ctx, id)
 	if err != nil {
 		return err
@@ -153,7 +166,7 @@ iPFSHash string, authorizedDevices []string, authorizedUsers []string) error {
 		Owner: owner,
 		Name: name,
 		Region: region,
-		IPFSHash: iPFSHash,
+		IPFSHashList: iPFSHashList,
 		AuthorizedDevices: authorizedDevices,
 		AuthorizedUsers: authorizedUsers,
 		UpdatedAt: timeString}
@@ -178,23 +191,4 @@ func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface,
 // check if requesting device has access to given device's data
 /*func fetchIPFSHashForDeviceFromDevice(ctx contractapi.TransactionContextInterface, requestingdeviceID, targetDeviceID ) {
 	// TODO
-}*/
-
-// check if requesting user has access to given device's data
-/*func (s *SmartContract) fetchIPFSHashForDeviceFromUser(ctx contractapi.TransactionContextInterface, requestinguserEmail string, targetDeviceID string) (string, error) {
-	exists, err := s.AssetExists(ctx, targetDeviceID)
-	if err != nil {
-		return "", err
-	}
-	if !exists {
-		return "The device " + targetDeviceID + " does not exist", nil
-	}
-	
-	asset, err := s.ReadAsset(ctx, targetDeviceID)
-	for _, v2 := range asset.AuthorizedUsers {
-		if requestinguserEmail == v2 {
-			return asset.IPFSHash, nil
-		}
-	}
-	return "The user " + requestinguserEmail + " does not have access to device " + targetDeviceID, nil
 }*/
